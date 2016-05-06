@@ -33,9 +33,9 @@ for l in bucket_list:
     print(temp_path)
     k.get_contents_to_filename(temp_path)
     command = """
-        /COPY
+        \copy
             PUMS_2014_Persons
-        FROM %s DELIMITER ',';
+        from '%s' with DELIMITER ',';
     """ % (temp_path)
     print(command)
     try:
