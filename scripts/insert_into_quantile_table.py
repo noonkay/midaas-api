@@ -36,7 +36,7 @@ for l in bucket_list:
         COPY
             PUMS_2014_Persons
         FROM %s DELIMITER ',';
-    """ % (temp)
+    """ % (temp_path)
     try:
         cursor.execute(command)
         conn.commit()
