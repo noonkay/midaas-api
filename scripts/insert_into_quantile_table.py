@@ -1,15 +1,44 @@
 import json
 import psycopg2
 import numpy
+import os
 import weighted
+import boto
+from boto.s3.key import Key
+from boto.s3.connection import S3Connection
 
+rds_config_path = os.path.abspath(os.path.join(os.path.dirname('midaas-api'), '..', 'rds-config.json'))
+s3_config_path = os.path.abspath(os.path.join(os.path.dirname('midaas-api'), '..', 's3-config.json'))
 # with open("./local-config.json") as rdsConfigFile:
-with open("../rds-config.json") as rdsConfigFile:
+with open(rds_config_path) as rdsConfigFile:
     config = json.load(rdsConfigFile)
 
 conn = psycopg2.connect(host=config["host"], password=config["password"], user=config["user"], database=config["database"], port=config["port"])
 
 cursor = conn.cursor()
+
+with open("../s3-config.json") as s3ConfigFile:
+    credential = json.load(s3ConfigFile)
+
+s3conn = S3Connection(credential["AWS_ACCESS_KEY_ID"], credential["AWS_SECRET_ACCESS_KEY"])
+bucket = s3conn.get_bucket('midaas')
+k = Key(bucket)
+bucket_list = bucket.list()
+for l in bucket_list:
+    k.key = l.name
+    temp = '../data/tmp/'+l.name
+    k.get_contents_to_filename(temp)
+    command = """
+        COPY
+            PUMS_2014_Persons
+        FROM %s DELIMITER ',';
+    """ % (temp)
+    try:
+        cursor.execute(command)
+        conn.commit()
+        print ("copied %s" % (temp))
+    except:
+        conn.rollback()
 
 def getQuantileIncome(quantile, state, race, sex, agegroup):
     # NOTE: please see
