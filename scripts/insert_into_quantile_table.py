@@ -33,10 +33,11 @@ for l in bucket_list:
     print(temp_path)
     k.get_contents_to_filename(temp_path)
     command = """
-        COPY
+        /COPY
             PUMS_2014_Persons
         FROM %s DELIMITER ',';
     """ % (temp_path)
+    print(command)
     try:
         cursor.execute(command)
         conn.commit()
