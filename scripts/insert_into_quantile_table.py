@@ -30,20 +30,16 @@ bucket_list = bucket.list()
 for l in bucket_list:
     k.key = l.name
     temp_path = os.path.join(BASE_DIR, 'tmp', l.name)
-    print(temp_path)
     k.get_contents_to_filename(temp_path)
-    command = """
-        \copy
-            PUMS_2014_Persons
-        from '%s' with DELIMITER ',';
-    """ % (temp_path)
-    print(command)
+    f = open(temp_path)
+    cursor.copy_expert("COPY PUMS_2014_Persons FROM STDIN WITH CSV HEADER NULL ''", file = f)
+    f.close()
     try:
-        cursor.execute(command)
         conn.commit()
-        print ("copied %s" % (temp))
-    except:
+        print ("copied %s" % (temp_path))
+    except psycopg2.Error as e:
         conn.rollback()
+        print(e, 'rolledback')
 
 def getQuantileIncome(quantile, state, race, sex, agegroup):
     # NOTE: please see
